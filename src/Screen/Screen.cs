@@ -105,7 +105,7 @@ namespace ActuallySudoku {
             };
             buttonsPanel.Controls.Add(checkButton);
 
-            hatch.Image = Image.FromFile("E:\\GitHub\\ActuallySudoku\\src\\Assets\\kula1.png");
+            hatch.Image = Image.FromFile("src/Assets/kula1.png");
             hatch.SizeMode = PictureBoxSizeMode.StretchImage;
             hatch.Location = new Point(35, 100);
             hatch.Size = new Size(100, 100);
@@ -170,7 +170,7 @@ namespace ActuallySudoku {
             }
 
             if (isCorrect) {
-                hatch.Image = Image.FromFile("E:\\GitHub\\ActuallySudoku\\src\\Assets\\kula3.png");
+                hatch.Image = Image.FromFile("src/Assets/kula3.png");
 
                 for (int row = 0; row < 9; row++) {
                     for (int col = 0; col < 9; col++) {
@@ -188,7 +188,7 @@ namespace ActuallySudoku {
 
             }
             else {
-                hatch.Image = Image.FromFile("E:\\GitHub\\ActuallySudoku\\src\\Assets\\kula2.png");
+                hatch.Image = Image.FromFile("src/Assets/kula2.png");
 
                 MessageBox.Show("Some cells are incorrect. Please try again.");
 
@@ -203,7 +203,7 @@ namespace ActuallySudoku {
                     }
                 }
 
-                hatch.Image = Image.FromFile("E:\\GitHub\\ActuallySudoku\\src\\Assets\\kula4.png");
+                hatch.Image = Image.FromFile("src/Assets/kula4.png");
             }
         }
     }
