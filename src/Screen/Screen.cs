@@ -1,212 +1,184 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+
 namespace ActuallySudoku {
-
     public partial class Screen : Form {
-        TextBox[,] cells = new TextBox[9, 9];
-        Random rand = new Random();
 
-        // Boolean isChecked = false;
-        PictureBox hatch;
+        // --- Constants ---
+        private const int CellSize = 40;
+        private const int BlockSpacing = 4;
+        private const int GridDimension = 9;
+        private const int TotalGridSize = CellSize * GridDimension + BlockSpacing * 2;
 
+        // --- Fields ---
+        private readonly TextBox[,] _cells = new TextBox[GridDimension, GridDimension];
+        private readonly SudokuGame _game;
+        private readonly PictureBox _hatchPictureBox;
 
         public Screen() {
-            hatch = new PictureBox();
-
             InitializeComponent();
-            CreateSudokuGrid();
+
+            _game = new SudokuGame();
+            _hatchPictureBox = new PictureBox();
+
+            CreateSudokuUI();
+
+            StartNewGame();
         }
 
-        private void CreateSudokuGrid() {
-            int cellSize = 40;
-            int gridSize = cellSize * 9;
-            int blockSpacing = 4;
-            var solution = GenerateSudokuSolution();
+        private void StartNewGame() {
+            _game.GenerateNewPuzzle(30);
+            PopulateGrid();
+            ResetCellColors();
+            _hatchPictureBox.Image = Image.FromFile("src/Assets/kula1.png");
+        }
 
+        private void CreateSudokuUI() {
+            CreateTitleLabel();
+            CreateGridPanel();
+            CreateControlsPanel();
+        }
 
-
-            Label textLabel = new Label();
-            textLabel.Text = "Actually Sudoku";
-            textLabel.Font = new Font("Rubik", 20, FontStyle.Bold);
-            textLabel.AutoSize = true;
-            textLabel.ForeColor = Color.DarkSlateGray;
+        private void CreateTitleLabel() {
+            Label textLabel = new Label {
+                Text = "Actually Sudoku",
+                Font = new Font("Rubik", 20, FontStyle.Bold),
+                AutoSize = true,
+                ForeColor = Color.DarkSlateGray
+            };
+            textLabel.Location = new Point((this.Width - textLabel.Width) / 2, 40);
             this.Controls.Add(textLabel);
-            textLabel.Location = new Point(
-                (this.Width - textLabel.Width) / 2,
-                40
-            );
+        }
 
-            Panel gridPanel = new Panel();
-            gridPanel.Size = new Size(gridSize + blockSpacing * 2, gridSize + blockSpacing * 2);
-            gridPanel.Location = new Point(
-                (this.ClientSize.Width - gridPanel.Width) / 2,
-                (this.ClientSize.Height - gridPanel.Height) / 2
-            );
-            gridPanel.BackColor = Color.LightSlateGray;
+        private void CreateGridPanel() {
+            Panel gridPanel = new Panel {
+                Size = new Size(TotalGridSize, TotalGridSize),
+                Location = new Point((this.ClientSize.Width - TotalGridSize) / 2, (this.ClientSize.Height - TotalGridSize) / 2),
+                BackColor = Color.LightSlateGray
+            };
             this.Controls.Add(gridPanel);
 
-            for (int row = 0; row < 9; row++) {
-                for (int col = 0; col < 9; col++) {
-                    TextBox tb = new TextBox();
-                    tb.BorderStyle = BorderStyle.None;
-                    tb.TextAlign = HorizontalAlignment.Center;
-
-                    if (col % 2 != row % 2) {
-                        tb.BackColor = Color.LightGray;
-                    }
-
-                    tb.Multiline = true;
-
-                    var r = rand.NextDouble();
-                    if (r < 0.25) {
-                        tb.Text = solution[row, col] == 0 ? "" : solution[row, col].ToString();
-                    }
-
-
-                    tb.Font = new Font("Rubik", 18, FontStyle.Regular);
-                    tb.Size = new Size(cellSize, cellSize);
-
-                    tb.Location = new Point(col * cellSize + (col - col % 3) / 3 * blockSpacing, row * cellSize + (row - row % 3) / 3 * blockSpacing);
-                    tb.MaxLength = 1;
-                    tb.Tag = new Point(row, col);
+            for (int row = 0; row < GridDimension; row++) {
+                for (int col = 0; col < GridDimension; col++) {
+                    TextBox tb = new TextBox {
+                        BorderStyle = BorderStyle.None,
+                        TextAlign = HorizontalAlignment.Center,
+                        Multiline = true,
+                        Font = new Font("Rubik", 18, FontStyle.Regular),
+                        Size = new Size(CellSize, CellSize),
+                        Location = new Point(col * CellSize + (col / 3) * BlockSpacing, row * CellSize + (row / 3) * BlockSpacing),
+                        MaxLength = 1,
+                        Tag = new Point(row, col)
+                    };
 
                     gridPanel.Controls.Add(tb);
-
-
-                    cells[row, col] = tb;
+                    _cells[row, col] = tb;
                 }
             }
+        }
 
-            Panel buttonsPanel = new Panel();
-            buttonsPanel.Location = new Point(10, 10);
-            buttonsPanel.Size = new Size(180, 300);
-
+        private void CreateControlsPanel() {
+            Panel buttonsPanel = new Panel { Location = new Point(10, 10), Size = new Size(180, 300) };
             this.Controls.Add(buttonsPanel);
 
-            Button showButton = new Button();
-            showButton.Text = "Show Solution";
-            showButton.Size = new Size(150, 30);
-            showButton.Location = new Point(10, 10);
-            showButton.Click += (sender, e) => {
-                for (int row = 0; row < 9; row++) {
-                    for (int col = 0; col < 9; col++) {
-                        if (solution[row, col] != 0) {
-                            cells[row, col].Text = solution[row, col].ToString();
-                        }
-                    }
-                }
-            };
+            Button showButton = new Button { Text = "Show Solution", Size = new Size(150, 30), Location = new Point(10, 10) };
+            showButton.Click += ShowButton_Click;
             buttonsPanel.Controls.Add(showButton);
 
-            Button checkButton = new Button();
-            checkButton.Text = "Check";
-            checkButton.Size = new Size(150, 30);
-            checkButton.Location = new Point(10, 50);
-            checkButton.Click += (sender, e) => {
-                CheckSolution(solution);
-            };
+            Button checkButton = new Button { Text = "Check", Size = new Size(150, 30), Location = new Point(10, 50) };
+            checkButton.Click += CheckButton_Click;
             buttonsPanel.Controls.Add(checkButton);
 
-            hatch.Image = Image.FromFile("src/Assets/kula1.png");
-            hatch.SizeMode = PictureBoxSizeMode.StretchImage;
-            hatch.Location = new Point(35, 100);
-            hatch.Size = new Size(100, 100);
-            buttonsPanel.Controls.Add(hatch);
+            _hatchPictureBox.Image = Image.FromFile("src/Assets/kula1.png");
+            _hatchPictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
+            _hatchPictureBox.Location = new Point(35, 100);
+            _hatchPictureBox.Size = new Size(100, 100);
+            buttonsPanel.Controls.Add(_hatchPictureBox);
         }
 
-        int[,] GenerateSudokuSolution() {
-            int[,] grid = new int[9, 9];
-
-            bool FillGrid(int row, int col) {
-                if (row == 9)
-                    return true;
-                if (col == 9)
-                    return FillGrid(row + 1, 0);
-
-                List<int> numbers = Enumerable.Range(1, 9).OrderBy(n => rand.Next()).ToList();
-
-                foreach (int num in numbers) {
-                    if (IsSafe(grid, row, col, num)) {
-                        grid[row, col] = num;
-                        if (FillGrid(row, col + 1))
-                            return true;
-                        grid[row, col] = 0;
+        private void PopulateGrid() {
+            for (int row = 0; row < GridDimension; row++) {
+                for (int col = 0; col < GridDimension; col++) {
+                    if (_game.Puzzle[row, col] != 0) {
+                        _cells[row, col].Text = _game.Puzzle[row, col].ToString();
+                        _cells[row, col].ReadOnly = true;
+                        _cells[row, col].Font = new Font(_cells[row, col].Font, FontStyle.Bold);
+                    }
+                    else {
+                        _cells[row, col].Text = "";
+                        _cells[row, col].ReadOnly = false;
+                        _cells[row, col].Font = new Font(_cells[row, col].Font, FontStyle.Regular);
                     }
                 }
-                return false;
             }
-
-            bool IsSafe(int[,] g, int row, int col, int num) {
-                for (int i = 0; i < 9; i++) {
-                    if (g[row, i] == num || g[i, col] == num)
-                        return false;
-                }
-
-                int startRow = row / 3 * 3;
-                int startCol = col / 3 * 3;
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        if (g[startRow + i, startCol + j] == num)
-                            return false;
-                    }
-                }
-
-                return true;
-            }
-
-            FillGrid(0, 0);
-            return grid;
         }
 
-        void CheckSolution(int[,] solution) {
+        private void ResetCellColors() {
+            for (int row = 0; row < GridDimension; row++) {
+                for (int col = 0; col < GridDimension; col++) {
+                    bool isLight = (col % 2 != row % 2);
+                    _cells[row, col].BackColor = isLight ? Color.LightGray : Color.WhiteSmoke;
+                }
+            }
+        }
 
-            bool isCorrect = true;
+        private void ShowButton_Click(object sender, EventArgs e) {
+            for (int row = 0; row < GridDimension; row++) {
+                for (int col = 0; col < GridDimension; col++) {
+                    _cells[row, col].Text = _game.Solution[row, col].ToString();
+                    bool isLight = (col % 2 != row % 2);
+                    _cells[row, col].BackColor = isLight ? Color.LightSkyBlue : Color.LightBlue;
+                }
+            }
+        }
 
-            for (int row = 0; row < 9; row++) {
-                for (int col = 0; col < 9; col++) {
-                    if (cells[row, col].Text != solution[row, col].ToString() && solution[row, col] != 0) {
-                        cells[row, col].BackColor = Color.Red;
-                        isCorrect = false;
+        private void CheckButton_Click(object sender, EventArgs e) {
+            ResetCellColors();
+            var userGrid = new int[GridDimension, GridDimension];
+            // bool isComplete = true;
+
+            for (int row = 0; row < GridDimension; row++) {
+                for (int col = 0; col < GridDimension; col++) {
+                    if (int.TryParse(_cells[row, col].Text, out int value)) {
+                        userGrid[row, col] = value;
+                    }
+                    else {
+                        userGrid[row, col] = 0;
+                        // isComplete = false;
                     }
                 }
             }
 
-            if (isCorrect) {
-                hatch.Image = Image.FromFile("src/Assets/kula3.png");
+            // if (!isComplete) {
+            //     MessageBox.Show("Please fill all cells before checking.", "Incomplete Puzzle", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //     return;
+            // }
 
-                for (int row = 0; row < 9; row++) {
-                    for (int col = 0; col < 9; col++) {
-                        if (col % 2 != row % 2) {
-                            cells[row, col].BackColor = Color.LightSeaGreen;
-                        }
-                        else {
-                            cells[row, col].BackColor = Color.GreenYellow;
-                        }
+            var incorrectCells = _game.CheckSolution(userGrid);
 
+            if (incorrectCells.Count == 0) {
+                _hatchPictureBox.Image = Image.FromFile("src/Assets/kula3.png");
+                for (int row = 0; row < GridDimension; row++) {
+                    for (int col = 0; col < GridDimension; col++) {
+                        bool isLight = (col % 2 != row % 2);
+                        _cells[row, col].BackColor = isLight ? Color.LightSeaGreen : Color.LightGreen;
                     }
                 }
-
-                MessageBox.Show("Congratulations! The solution is correct.");
-
+                MessageBox.Show("Congratulations! The solution is correct.", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else {
-                hatch.Image = Image.FromFile("src/Assets/kula2.png");
-
-                MessageBox.Show("Some cells are incorrect. Please try again.");
-
-                for (int row = 0; row < 9; row++) {
-                    for (int col = 0; col < 9; col++) {
-                        if (col % 2 != row % 2) {
-                            cells[row, col].BackColor = Color.LightGray;
-                        }
-                        else {
-                            cells[row, col].BackColor = Color.White;
-                        }
+                _hatchPictureBox.Image = Image.FromFile("src/Assets/kula2.png");
+                foreach (var point in incorrectCells) {
+                    if (!_cells[point.X, point.Y].ReadOnly) {
+                        _cells[point.X, point.Y].BackColor = Color.Salmon;
                     }
                 }
-
-                hatch.Image = Image.FromFile("src/Assets/kula4.png");
+                MessageBox.Show($"Found {incorrectCells.Count} incorrect cells. Please try again.", "Mistakes Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _hatchPictureBox.Image = Image.FromFile("src/Assets/kula1.png");
+                ResetCellColors();
             }
         }
     }
-
-
 }
